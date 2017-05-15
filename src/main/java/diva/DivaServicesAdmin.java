@@ -33,6 +33,9 @@ import returnTypes.DivaServicesResponse;
  * @author 317617032205
  */
 public class DivaServicesAdmin{
+    
+    //Test
+    
     public static void main(String[] args) throws MethodNotAvailableException, IOException {
         //TODO: Make this request work and write to the console all available methods
         //checkParams(runGetRequest("http://192.168.56.102:8080/enhancement/sharpenenhancement/1"));//json array
