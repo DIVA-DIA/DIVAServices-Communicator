@@ -37,50 +37,45 @@ public class DivaServicesAdmin{
     //Test
     
     public static void main(String[] args) throws MethodNotAvailableException, IOException {
-        //TODO: Make this request work and write to the console all available methods
-        //checkParams(runGetRequest("http://192.168.56.102:8080/enhancement/sharpenenhancement/1"));//json array
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("inputImage", 4); // user enters number as int or as string or both?
-        DivaServicesResponse<JSONObject> result = runMethod("http://divaservices.unifr.ch/api/v2/graph/graphextraction/1", parameters);
-        // http://divaservices.unifr.ch/api/v2/graph/graphextraction/1
+        parameters.put("sharpenLevel", 8); 
+        parameters.put("inputImage", "lightcoralpalefrogmouth/bnf-lat11641_001r.jpeg");
+        List<JSONObject> result = runMethod("http://divaservices.unifr.ch/api/v2/enhancement/sharpenenhancement/1", parameters);
+        
+     //   List<JSONObject> result = runMethod ("http://divaservices.unifr.ch/api/v2/graph/graphextraction/1", parameters);
+        if(result != null){ 
+            System.out.println("finalresult: "+result);
+        }else{
+            // exception
+        }   
+            
     }
                     //return list of JSONObject
-    public static DivaServicesResponse<JSONObject> runMethod(String url, Map<String, Object> parameters) throws MethodNotAvailableException, IOException{
+    public static List<JSONObject> runMethod(String url, Map<String, Object> parameters) throws MethodNotAvailableException, IOException{
         JSONObject postRequest= checkParams(runGetRequest(url), parameters);
         return runPostRequest(url, postRequest);
         
         // No exceptions. The parameters are OK
         //System.out.println("PARAMS ARE OKOKOKOKOK");
-        
-        
     }
    
     
-    private static DivaServicesResponse<JSONObject> runPostRequest(String url, JSONObject postRequest) throws IOException{
-      
+    private static List<JSONObject> runPostRequest(String url, JSONObject postRequest) throws IOException{
+        List<JSONObject> results = null;
         JSONObject postResult = HttpRequest.executePost(url, postRequest);
         //TODO: Check if postResult contains no error
         // 202 correc, if 500 false
+          System.out.println("postresult:  " +postResult);
         
         // processDivaRequest(request, postRequest);
-        if(postResult.has("status") && postResult.getInt("status")==202){   //correct
-            List<List<Map>> outputs = new LinkedList<>();
-            for (int i = 0; i < postResult.getJSONArray("results").length(); i++) {
-                List<JSONObject> results = HttpRequest.getResult(postResult, 5, request); //checkinterval How often?
-                for (JSONObject result : results) {
-                    List<Map> output = extractOutput(result.getJSONArray("output"));
-                    outputs.add(output);
-                }
-            }
-            return new DivaServicesResponse<>(null, outputs, null);
-
-        }else if(postResult.has("status") && postResult.getInt("status")==500){  //wrong
+        if(postResult.has("statusCode") && postResult.getInt("statusCode")==202){   //correct
+            results = HttpRequest.getResult(postResult, 5); //checkinterval How often?
+        }else if(postResult.has("statusCode") && postResult.getInt("statusCode")!=202){  //wrong
             // exception
-            
-        }else{      // might be wrong too     
+        }else{
             // exception
         }
-       
+        return results;
         /**
          * Task 3 Poll for result
          */
@@ -115,128 +110,79 @@ public class DivaServicesAdmin{
             JSONObject inputTypeContent = new JSONObject(inputTypeContentS);
             if(inputTypeContent.has("userdefined") && inputTypeContent.getBoolean("userdefined")== true ){
                 String parameter = inputTypeContent.getString("name"); 
-                if(!userParams.containsKey(parameter)){
+                if(!userParams.containsKey(parameter)){     //********* If forgot <key,vale> object, still use default values? 
                     // client exception "you forgot a <key,value> object"
                 }
-                JSONObject options = inputTypeContent.getJSONObject("options"); //******** obwohl required== true trotzdem default gebrauchen?
-                if(options.has("required") && options.getBoolean("required")==true){
-                    if(inputTypeName.equals("select")){
-                        String userValue = userParams.get(parameter).toString();
-                        String values = options.getJSONArray("values").toString();
-                        if(values.contains(userValue)){
-                            parameters.put(parameter, userValue);
-                            ++countmatch;
-                        }else if(userValue == null){                
-                            int p = options.getInt("default");
-                            String defaultValue = options.getJSONArray("values").getString(p);
-                            parameters.put(parameter, defaultValue);
-                            ++countmatch;
-                        }else{
+                Object userValue = userParams.get(parameter);
+                JSONObject options = inputTypeContent.getJSONObject("options"); 
+                if(inputTypeName.equals("select")){        
+                    String values = options.getJSONArray("values").toString();
+                    if(userValue != null && values.contains(userValue.toString())){
+                        parameters.put(parameter, userValue.toString());        //if a select-userValue is a number, should it be put as number or string?
+                        ++countmatch;
+                    }else if(userValue == null){                
+                        int p = options.getInt("default");
+                        String defaultValue = options.getJSONArray("values").getString(p);
+                        parameters.put(parameter, defaultValue);
+                        ++countmatch;
+                    }else{
                             // client exception "not accepted value for this parameter"
-                        }
-                    }else if(inputTypeName.equals("number")){
-                        double userValue = (double) userParams.get(parameter);
-                        double min = options.getDouble("min");   
-                        double max = options.getDouble("max");
-                        double steps = options.getDouble("steps");
-                        double k=min;
+                    }
+                }else if(inputTypeName.equals("number")){
+                    double min = options.getDouble("min");   
+                    double max = options.getDouble("max");
+                    double steps = options.getDouble("steps");
+                    double k=min;
+                    double userValueD;
+                    if(userValue != null){
+                        userValueD = new Double(userValue.toString());
                         for(; k<=max; k=k+steps){
-                            if(userValue == k){
+                            if(userValueD == k){
                                 break;
                             }
                         }
                         if(k<=max){
-                            parameters.put(parameter, userValue);
-                            ++countmatch;
-                        }else if((Object) userValue == null){    //******** (Object) ok ??
-                            double defaultValue = options.getDouble("default");
-                            parameters.put(parameter, defaultValue);
+                            parameters.put(parameter, userValueD);
                             ++countmatch;
                         }else{
                             //client exception "not accepted value for this parameter"
                         }
+                    }else{   // if userValue == null
+                        double defaultValue = options.getDouble("default");
+                        parameters.put(parameter, defaultValue);
+                        ++countmatch;
+                    }
                           
-                    }else if(inputTypeName.equals("file")){
-                        String userValue = userParams.get(parameter).toString();
-                        String mimeType = options.getString("mimeType").split("/")[1]; // jpeg etc. (without image/...)
-                        if(userValue.split(".")[1].equals(mimeType)){
+                }else if(inputTypeName.equals("file")){
+                    String mimeType = options.getString("mimeType").split("/")[1]; // jpeg, jpg etc. (without image/...)
+                    if(userValue != null){
+                        String userMimeType = userValue.toString().split("\\.")[1];
+                        if(userMimeType.equals(mimeType)){
                             JSONObject dataObject = new JSONObject();
-                            dataObject.put(parameter, userValue);
+                            dataObject.put(parameter, userValue.toString());
                             dataJA.put(dataObject);
                             ++countmatch;
-                        }else if(userValue == null){
-                            // client excpetion "value required for this parameter"
-                        }else{
-                            //client exception "not accepted value for this parameter" 
-                        }
-                    }else{
-                            //server exception "wrong filetype"
-                    }
-                }else if(options.has("required") && options.getBoolean("required")==false){
-                       
-                    if(inputTypeName.equals("select")){ 
-                        
-                        String userValue = userParams.get(parameter).toString();
-                        String values = options.getJSONArray("values").toString();
-                        if(values.contains(userValue)){
-                            parameters.put(parameter, userValue);
-                            ++countmatch;
-                        }else if(userValue == null){
-                            int p = options.getInt("default");
-                            String defaultValue = options.getJSONArray("values").getString(p);
-                            parameters.put(parameter, defaultValue);
-                            ++countmatch;
-                            
-                        }else{
-                            // client exception "not accepted value for this parameter"
-                        }
-                    }else if(inputTypeName.equals("number")){
-                        double userValue = (double) userParams.get(parameter);
-                        double min = options.getDouble("min");   
-                        double max = options.getDouble("max");
-                        double steps = options.getDouble("steps");
-                        double k=min;
-                        for(; k<=max; k=k+steps){
-                            if(userValue == k){
-                                break;
-                            }
-                        }
-                        if(k<=max){
-                            parameters.put(parameter, userValue);
-                            ++countmatch;
-                        }else if((Object) userValue == null){    //******** (Object) ok ??
-                            double defaultValue = options.getDouble("default");
-                            parameters.put(parameter, defaultValue);
-                            ++countmatch;
                         }else{
                             //client exception "not accepted value for this parameter"
                         }
-/*                  }else if(inputTypeName.equals("file")){      //******* this case exists? userdefined==true and required==false?
-                        String userValue = userParams.get(parameter).toString();
-                        String mimeType = options.getString("mimeType").split("/")[1]; // jpeg etc. (without image/...)
-                        if(userValue.split(".")[1].equals(mimeType)){
-                            JSONObject dataJO = new JSONObject();
-                            dataJO.put(parameter, userValue);
-                            dataJA.put(dataJO);
-                            ++countmatch;           
-                        }else{
-                         // client exception "not accepted value for this parameter" 
-                        }           */
-                    }else{
-                            //server exception "wrong filetype"
+                    }else{  //if userValue == null
+                            // client excpetion "value required for this parameter" (there is no default)
                     }
                 }else{
-                    // server exception "server forgot 'required' key"
+                            //server exception "wrong filetype"
                 }
+                // else if (inputTypeName.equals("highlighter"))
             }
-        }
+        } 
         
         if(countmatch < userParams.size()){
             //client exception "you put too many parameters. you need to insert values for:..."
         }
         // ITS ALL OK
-        postRequest.put("parameters", parameters);
         postRequest.put("data", dataJA);
+        postRequest.put("parameters", parameters);
+        System.out.println("********************************");
+        System.out.println("postrequest: "+postRequest);
         return postRequest;
     }    
     

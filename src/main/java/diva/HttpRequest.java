@@ -5,8 +5,6 @@ package diva;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -48,36 +47,34 @@ public class HttpRequest {
         // add request header
         connection.setRequestProperty("User-Agent", "Mozilla/5.0 ( compatible ) ");
         connection.setRequestProperty("Accept", "*/*");
-        
+
         String connectionStr = convertStreamToString(connection);
         JSONObject connectionJO = new JSONObject(connectionStr);
-        
+
         return connectionJO;
     }
-    
+
     // Does executePost work?
-    public static JSONObject executePost(String url, JSONObject payload) throws IOException{
+    public static JSONObject executePost(String url, JSONObject payload) throws IOException {
         URL obj = new URL(url);
-        HttpsURLConnection connection = (HttpsURLConnection) obj.openConnection();
-        connection.setRequestMethod("POST");
-        // add request header
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 ( compatible ) ");
-        connection.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-        // send post request
+        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
         connection.setDoOutput(true);
-        DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
-        wr.writeBytes(payload.toString());
+        connection.setDoInput(true);
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestMethod("POST");
+        
+        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+        wr.write(payload.toString());
         wr.flush();
-        wr.close();
-        
-        String connectionStr = convertStreamToString(connection);  
+
+        String connectionStr = convertStreamToString(connection);
         JSONObject connectionJO = new JSONObject(connectionStr);
-        
+
         return connectionJO;
-        
+
     }
-    
- 
+
     private static String convertStreamToString(HttpURLConnection connection) throws IOException {
         //InputStream instream = entity.getContent();
         BufferedReader in = null;
@@ -100,45 +97,26 @@ public class HttpRequest {
     }
 
     /**
-     * Gets a result JSON object from the exeuction response
-     * This method will run GET requests in a 5 second interval until the result is available
+     * Gets a result JSON object from the exeuction response This method will
+     * run GET requests in a 5 second interval until the result is available
      *
-     * @param result        The JSON object return from the POST request
+     * @param result The JSON object return from the POST request
      * @param checkInterval How often to check for new results (in seconds)
-     * @param request       The DivaServicesRequest
+     * @param request The DivaServicesRequest
      * @return The result JSON object
      */
-    public static List<JSONObject> getResult(JSONObject result, int checkInterval, DivaServicesRequest request) throws MethodNotAvailableException, IOException {
-        if (result.has("statusCode") && result.getInt("statusCode") == 404) {
-            throw new MethodNotAvailableException("This method is currently not available");
-        }
+    public static List<JSONObject> getResult(JSONObject result, int checkInterval) throws IOException {
         JSONArray results = result.getJSONArray("results");
         List<JSONObject> response = new LinkedList<>();
-        if (request.getCollection().isPresent()) {
-            for (int i = 0; i < results.length(); i++) {
-                JSONObject res = results.getJSONObject(i);
-                String url = res.getString("resultLink");
-                JSONObject getResult = getSingleResult(url, checkInterval);
-                response.add(getResult);
-            }
-            return response;
-        } else if (request.getImage().isPresent()) {
-            //handle single images
-            JSONObject correctResult = null;
-            for (int i = 0; i < results.length(); i++) {
-                JSONObject res = results.getJSONObject(i);
-                if (res.getString("md5").equals(request.getImage().get().getMd5Hash())) {
-                    correctResult = res;
-                }
-            }
-            String url = correctResult.getString("resultLink");
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject res = results.getJSONObject(i);
+            String url = res.getString("resultLink");
             JSONObject getResult = getSingleResult(url, checkInterval);
             response.add(getResult);
-            return response;
         }
-        return null;
+        return response;
     }
- 
+
     private static JSONObject getSingleResult(String url, int checkInterval) throws MalformedURLException, IOException {
         JSONObject getResult = executeGet(url);
         while (!getResult.getString("status").equals("done")) {
@@ -153,5 +131,5 @@ public class HttpRequest {
         }
         return getResult;
     }
- 
+
 }
