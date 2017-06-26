@@ -5,3 +5,5 @@ dist/
 nbdist/
 .nb-gradle/
 target/
+/.idea/
+/DivaServicesCommunicator_2.iml
