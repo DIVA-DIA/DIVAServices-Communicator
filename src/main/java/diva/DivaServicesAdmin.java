@@ -6,9 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import static com.sun.corba.se.spi.presentation.rmi.StubAdapter.request;
@@ -19,10 +17,7 @@ import exceptions.UserParametersOverloadException;
 import exceptions.UserValueRequiredException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.parser.JSONParser;
@@ -34,13 +29,11 @@ import returnTypes.DivaServicesResponse;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
- *
  * @author 317617032205
  */
 public class DivaServicesAdmin {
-    
+
     // final output
     static JSONObject postRequest0 = new JSONObject();
     static JSONObject parameters = new JSONObject();
@@ -61,24 +54,22 @@ public class DivaServicesAdmin {
         if (result != null) {
             System.out.println("Intermediate POST request response:");
             for (int i = 0; i < result.size(); i++) {
-                logJsonObject(result.get(i));
+                //logJsonObject(result.get(i));
             }
         } else {
             throw new IntermediatePOSTRequestResponseException("Intermediate POST request response failure");
         }
-
     }
 
+    //Test
     public static List<JSONObject> runMethod(String url, Map<String, Object> userParameters) throws MethodNotAvailableException, IOException, ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, UserParametersOverloadException {
         JSONObject postRequest1 = checkParams(runGetRequest(url), userParameters);
         return runPostRequest(url, postRequest1);
-
-        // No exceptions. The parameters are OK
-        //System.out.println("PARAMS ARE OKOKOKOKOK");
+        //return list of JSONObject
     }
 
     private static List<JSONObject> runPostRequest(String url, JSONObject postRequest1) throws IOException, MethodNotAvailableException {
-        
+
         List<JSONObject> results = null;
         JSONObject postResult = HttpRequest.executePost(url, postRequest1);
         //logJsonObject(postResult);
@@ -90,8 +81,6 @@ public class DivaServicesAdmin {
             throw new MethodNotAvailableException("Method is not available (statusCode != 404)");
         }
         return results;
-
-        //   logJsonObject(postObject);
     }
 
     private static JSONObject runGetRequest(String url) throws MethodNotAvailableException, MalformedURLException, IOException {
@@ -102,9 +91,12 @@ public class DivaServicesAdmin {
         return response;
     }
 
-    private static JSONObject checkParams(JSONObject object, Map<String, Object> userParameters) throws ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, UserParametersOverloadException{
+    private static JSONObject checkParams(JSONObject object, Map<String, Object> userParameters) throws ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, UserParametersOverloadException {
+        JSONObject postRequest = new JSONObject();
+        JSONObject parameters = new JSONObject();
+        JSONArray dataJA = new JSONArray();
 
-        JSONArray arrayOfInputs = object.getJSONArray("input"); 
+        JSONArray arrayOfInputs = object.getJSONArray("input");
         for (int j = 0; j < arrayOfInputs.length(); j++) {
             //String input = arrayOfInputs.getJSONObject(j).toString(); // z.B {"file": {{...}}}
             String inputType = arrayOfInputs.getJSONObject(j).keys().next();
@@ -112,14 +104,14 @@ public class DivaServicesAdmin {
             JSONObject inputInfo = arrayOfInputs.getJSONObject(j).getJSONObject(inputType);
             if (inputInfo.has("userdefined") && inputInfo.getBoolean("userdefined") == true) {
                 pName = inputInfo.getString("name");
-                if (!userParameters.containsKey(pName)) {     
+                if (!userParameters.containsKey(pName)) {
                     throw new ForgotKeyValueObjectException("You forgot a <key,value> object with parameter key " + pName);
                 }
                 Object userValue = userParameters.get(pName);
                 JSONObject pOptions = inputInfo.getJSONObject("options");
                 if (inputType.equals("select")) {
                     checkSelect(pOptions, userValue);
-                    
+
                 } else if (inputType.equals("number")) {
                     checkNumber(pOptions, userValue);
 
@@ -130,39 +122,18 @@ public class DivaServicesAdmin {
                     //server exception "wrong filetype"
                     throw new FileTypeConfusionException("Server has file type confusion");
                 }
-                // else if (inputType.equals("highlighter"))
             }
         }
 
-        if (countmatch < userParameters.size()) {
-            //client exception "you put too many parameters. you need to insert values for:..."
-            throw new UserParametersOverloadException("You have put too many parameters");
-        }
-        // ITS ALL OK
-        postRequest0.put("data", data);
-        postRequest0.put("parameters", parameters);
-        System.out.println("POST request:");
-        logJsonObject(postRequest0);
-        return postRequest0;
+        // JSON printing
+        postRequest.put("data", dataJA);
+        postRequest.put("parameters", parameters);
+        //System.out.println("********************************");
+        //System.out.println("postrequest: " + postRequest);
+        return postRequest;
     }
-    
-    
-    // input type checks
-    private static void checkSelect(JSONObject pOptions, Object userValue) throws IncompatibleValueException{
-        String pValues = pOptions.getJSONArray("values").toString();
-        if (userValue != null && pValues.contains(userValue.toString())) {
-            parameters.put(pName, userValue.toString());        
-            ++countmatch;
-        } else if (userValue == null) {
-            int p = pOptions.getInt("default");
-            String defaultValue = pOptions.getJSONArray("values").getString(p);
-            parameters.put(pName, defaultValue);
-            ++countmatch;
-        } else {
-            throw new IncompatibleValueException("Not accepted value for parameter key " + pName);
-        }
-    }
-    private static void checkNumber(JSONObject pOptions, Object userValue) throws IncompatibleValueException{
+
+    private static void checkNumber(JSONObject pOptions, Object userValue) throws IncompatibleValueException {
         double min = pOptions.getDouble("min");
         double max = pOptions.getDouble("max");
         double steps = pOptions.getDouble("steps");
@@ -187,7 +158,24 @@ public class DivaServicesAdmin {
             ++countmatch;
         }
     }
-    private static void checkFile(JSONObject pOptions, Object userValue) throws IncompatibleValueException, UserValueRequiredException{
+
+    // input type checks
+    private static void checkSelect(JSONObject pOptions, Object userValue) throws IncompatibleValueException {
+        String pValues = pOptions.getJSONArray("values").toString();
+        if (userValue != null && pValues.contains(userValue.toString())) {
+            parameters.put(pName, userValue.toString());
+            ++countmatch;
+        } else if (userValue == null) {
+            int p = pOptions.getInt("default");
+            String defaultValue = pOptions.getJSONArray("values").getString(p);
+            parameters.put(pName, defaultValue);
+            ++countmatch;
+        } else {
+            throw new IncompatibleValueException("Not accepted value for parameter key " + pName);
+        }
+    }
+
+    private static void checkFile(JSONObject pOptions, Object userValue) throws IncompatibleValueException, UserValueRequiredException {
         String mimeType = pOptions.getString("mimeType").split("/")[1]; // jpeg, jpg etc. (without image/...)
         if (userValue != null) {
             String userMimeType = userValue.toString().split("\\.")[1];
@@ -200,17 +188,14 @@ public class DivaServicesAdmin {
                 throw new IncompatibleValueException("Not accepted value for parameter key " + pName);
             }
         } else {  //if userValue == null
-             throw new UserValueRequiredException("User value required for this parameter");
+            throw new UserValueRequiredException("User value required for this parameter");
         }
     }
-    
 
-    // JSON printing
     private static void logJsonObject(JSONObject object) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonParser jp = new JsonParser();
         JsonElement je = jp.parse(object.toString());
         System.out.println(gson.toJson(je));
     }
-
 }
