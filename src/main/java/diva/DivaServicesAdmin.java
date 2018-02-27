@@ -92,10 +92,6 @@ public class DivaServicesAdmin {
     }
 
     private static JSONObject checkParams(JSONObject object, Map<String, Object> userParameters) throws ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, UserParametersOverloadException {
-        JSONObject postRequest = new JSONObject();
-        JSONObject parameters = new JSONObject();
-        JSONArray dataJA = new JSONArray();
-
         JSONArray arrayOfInputs = object.getJSONArray("input");
         for (int j = 0; j < arrayOfInputs.length(); j++) {
             //String input = arrayOfInputs.getJSONObject(j).toString(); // z.B {"file": {{...}}}
@@ -126,11 +122,11 @@ public class DivaServicesAdmin {
         }
 
         // JSON printing
-        postRequest.put("data", dataJA);
-        postRequest.put("parameters", parameters);
+        postRequest0.put("data", data);
+        postRequest0.put("parameters", parameters);
         //System.out.println("********************************");
         //System.out.println("postrequest: " + postRequest);
-        return postRequest;
+        return postRequest0;
     }
 
     private static void checkNumber(JSONObject pOptions, Object userValue) throws IncompatibleValueException {
