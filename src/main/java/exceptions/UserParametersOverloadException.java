@@ -9,8 +9,8 @@ package exceptions;
  *
  * @author 317617032205
  */
-public class ForgotKeyValueObjectException extends Exception {
-    public ForgotKeyValueObjectException(String message){
+public class UserParametersOverloadException extends Exception{
+    public UserParametersOverloadException(String message){
         super(message);
     }
 }

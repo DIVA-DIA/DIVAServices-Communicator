@@ -9,8 +9,8 @@ package exceptions;
  *
  * @author 317617032205
  */
-public class ForgotKeyValueObjectException extends Exception {
-    public ForgotKeyValueObjectException(String message){
+public class FileTypeConfusionException extends Exception{
+    public FileTypeConfusionException(String message){
         super(message);
     }
 }

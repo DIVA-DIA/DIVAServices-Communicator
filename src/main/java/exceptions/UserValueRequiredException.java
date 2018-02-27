@@ -9,8 +9,8 @@ package exceptions;
  *
  * @author 317617032205
  */
-public class ForgotKeyValueObjectException extends Exception {
-    public ForgotKeyValueObjectException(String message){
+public class UserValueRequiredException extends Exception{
+    public UserValueRequiredException(String message){
         super(message);
     }
 }

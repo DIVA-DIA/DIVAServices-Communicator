@@ -9,6 +9,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import static diva.DivaServicesAdmin.postRequest0;
 import exceptions.MethodNotAvailableException;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -119,12 +120,13 @@ public class HttpRequest {
 
     private static JSONObject getSingleResult(String url, int checkInterval) throws MalformedURLException, IOException {
         JSONObject getResult = executeGet(url);
-        while (!getResult.getString("status").equals("done")) {
+        while (!getResult.getString("status").equals("done")) {  // HERE THE PROGRAM GETS STUCK!!!! STATUS IS NEVER EQUAL DONE. WHY??
             //Result not available yet
             try {
                 //Wait 5 seconds and try again
                 Thread.sleep(checkInterval * 1000);
                 getResult = executeGet(url);
+               // System.out.println(getResult + "after");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

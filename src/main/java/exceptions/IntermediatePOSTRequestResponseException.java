@@ -9,8 +9,8 @@ package exceptions;
  *
  * @author 317617032205
  */
-public class ForgotKeyValueObjectException extends Exception {
-    public ForgotKeyValueObjectException(String message){
+public class IntermediatePOSTRequestResponseException extends Exception{
+    public IntermediatePOSTRequestResponseException(String message){
         super(message);
     }
 }
