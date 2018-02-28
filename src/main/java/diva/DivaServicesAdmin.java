@@ -11,9 +11,11 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -130,7 +132,7 @@ public class DivaServicesAdmin {
         if (userValue != null) {
             userValueD = new Double(userValue.toString());
             for (; k <= max; k = k + steps) {
-                if (userValueD == k) {
+                if (userValueD - k < 0.000001) {
                     break;
                 }
             }
@@ -164,10 +166,11 @@ public class DivaServicesAdmin {
     }
 
     private static void checkFile(JSONObject pOptions, Object userValue) throws IncompatibleValueException, UserValueRequiredException {
-        String mimeType = pOptions.getString("mimeType");
+        JSONArray mimeTypes = pOptions.getJSONObject("mimeTypes").getJSONArray("allowed");
+        String[] allowedTypes = mimeTypes.toString().replace("[", "").replace("]", "").replace("\"", "").split(",");
         if (userValue != null) {
             String userMimeType = URLConnection.guessContentTypeFromName(userValue.toString());
-            if (userMimeType.equals(mimeType)) {
+            if (Arrays.asList(allowedTypes).contains(userMimeType)) {
                 JSONObject dataObject = new JSONObject();
                 dataObject.put(pName, userValue.toString());
                 data.put(dataObject);
