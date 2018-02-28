@@ -1,34 +1,26 @@
 package diva;
 
-import exceptions.MethodNotAvailableException;
-import exceptions.ForgotKeyValueObjectException;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-import static com.sun.corba.se.spi.presentation.rmi.StubAdapter.request;
-import exceptions.FileTypeConfusionException;
-import exceptions.IncompatibleValueException;
-import exceptions.IntermediatePOSTRequestResponseException;
-import exceptions.UserParametersOverloadException;
-import exceptions.UserValueRequiredException;
+import exceptions.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.nashorn.internal.parser.JSONParser;
-import org.apache.http.ParseException;
-import returnTypes.DivaServicesResponse;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 /**
  * @author 317617032205
  */
@@ -47,14 +39,14 @@ public class DivaServicesAdmin {
     public static void main(String[] args) throws MethodNotAvailableException, IOException, ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, IntermediatePOSTRequestResponseException, UserParametersOverloadException {
         Map<String, Object> userParameters = new HashMap<>();
         userParameters.put("sharpenLevel", 8);
-        userParameters.put("inputImage", "lightcoralpalefrogmouth/bnf-lat11641_001r.jpeg");
+        userParameters.put("inputImage", "communicatorTestCollection/e-codices_bnf-lat11641_001r_large.jpg");
         List<JSONObject> result = runMethod("http://divaservices.unifr.ch/api/v2/enhancement/sharpenenhancement/1", userParameters);
 
         //List<JSONObject> result = runMethod ("http://divaservices.unifr.ch/api/v2/graph/graphextraction/1", parameters);
         if (result != null) {
             System.out.println("Intermediate POST request response:");
             for (int i = 0; i < result.size(); i++) {
-                //logJsonObject(result.get(i));
+                logJsonObject(result.get(i));
             }
         } else {
             throw new IntermediatePOSTRequestResponseException("Intermediate POST request response failure");
@@ -172,9 +164,9 @@ public class DivaServicesAdmin {
     }
 
     private static void checkFile(JSONObject pOptions, Object userValue) throws IncompatibleValueException, UserValueRequiredException {
-        String mimeType = pOptions.getString("mimeType").split("/")[1]; // jpeg, jpg etc. (without image/...)
+        String mimeType = pOptions.getString("mimeType");
         if (userValue != null) {
-            String userMimeType = userValue.toString().split("\\.")[1];
+            String userMimeType = URLConnection.guessContentTypeFromName(userValue.toString());
             if (userMimeType.equals(mimeType)) {
                 JSONObject dataObject = new JSONObject();
                 dataObject.put(pName, userValue.toString());

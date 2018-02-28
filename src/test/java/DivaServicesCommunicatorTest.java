@@ -1,5 +1,5 @@
 import diva.DivaServicesAdmin;
-import exceptions.MethodNotAvailableException;
+import exceptions.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.util.Map;
 public class DivaServicesCommunicatorTest {
 
     @Test
-    public void testBinarization() throws MethodNotAvailableException, IOException {
+    public void testBinarization() throws MethodNotAvailableException, IOException, ForgotKeyValueObjectException, IncompatibleValueException, UserValueRequiredException, FileTypeConfusionException, UserParametersOverloadException {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("inputImage", "ghostwhitesteepmyna/csg562-009.jpg");
 

@@ -103,7 +103,6 @@ public class HttpRequest {
      *
      * @param result The JSON object return from the POST request
      * @param checkInterval How often to check for new results (in seconds)
-     * @param request The DivaServicesRequest
      * @return The result JSON object
      */
     public static List<JSONObject> getResult(JSONObject result, int checkInterval) throws IOException {
